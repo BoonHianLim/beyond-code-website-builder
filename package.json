@@ -14,7 +14,7 @@
     "clean": "rimraf dist"
   },
   "keywords": [],
-  "author": "",
+  "author": "BoonHianLim",
   "private": true,
   "workspaces": [
     "fe",
