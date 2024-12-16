@@ -1,0 +1,23 @@
+{
+  "name": "express-typescript",
+  "version": "1.0.0",
+  "description": "This is a simple expressJS application template using NodeJS and Typescript",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch be -e ts,ejs --exec yarn run dev:startall",
+    "dev:startall": "npm-run-all --parallel dev:fe dev:be",
+    "dev:fe": "http-server ./fe -a localhost -p 3000 -d false",
+    "dev:be": "npm-run-all build dev:bestart",
+    "dev:bestart": "node .",
+    "build": "npm-run-all clean tsc",
+    "tsc": "tsc",
+    "clean": "rimraf dist"
+  },
+  "keywords": [],
+  "author": "",
+  "private": true,
+  "workspaces": [
+    "fe",
+    "be"
+  ]
+}
