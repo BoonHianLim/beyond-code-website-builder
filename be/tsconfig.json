@@ -11,14 +11,14 @@
         "paths": {
             "*": [
                 "node_modules/*",
-                "be/types/*"
+                "src/types/*"
             ]
         }
     },
     "include": [
-        "be/**/*"
+        "src/**/*"
     ],
     "exclude": [
-        "be/public"
+        "src/public"
     ]
 }
