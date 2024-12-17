@@ -60,6 +60,8 @@
         const previewContainer = document.querySelector(".preview-container");
         const previewImg = document.querySelector(".preview-img");
 
+        let selectedFile = null;
+
         // Optional: Add drag & drop functionality
         uploadBox.addEventListener("dragover", (e) => {
           e.preventDefault();
@@ -93,6 +95,9 @@
             return;
           }
 
+          // Set the selected file
+          selectedFile = file;
+
           // Preview the image
           const reader = new FileReader();
           reader.onload = function (e) {
@@ -109,6 +114,11 @@
         const contentArea = document.querySelector(".content-area");
 
         generateBtn.addEventListener("click", async () => {
+          if (!selectedFile) {
+            alert("Please upload a file first.");
+            return;
+          }
+
           // Show loading overlay and blur the content
           loadingOverlay.style.display = "flex";
           contentArea.classList.add("blur");
@@ -116,23 +126,22 @@
           try {
             const isLocal =
               window.location.hostname === "localhost" ||
-              window.location.hostname === "127.0.0.1" || 
+              window.location.hostname === "127.0.0.1" ||
               !window.location.hostname;
-            console.log("hostname", window.location.hostname);
+
             const API_ENDPOINT = isLocal
               ? "http://localhost:8080"
               : "https://api.yourproductionurl.com";
 
+            // Create FormData to handle file upload
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+            formData.append("model", document.getElementById("aiModel").value);
+
             // Send request to backend (replace URL with your API endpoint)
-            const response = await fetch(API_ENDPOINT+"/generate-app", {
+            const response = await fetch(API_ENDPOINT + "/generate-app", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: document.getElementById("aiModel").value,
-                message: "Generate app request",
-              }),
+              body: formData,
             });
 
             if (response.ok) {
