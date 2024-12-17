@@ -5,6 +5,6 @@ import GeneratorController from '../controllers/generate'
 const router = Express.Router()
 const upload = multer({ dest: './public/data/uploads/' })
 
-router.post('/generate-app', upload.single('file'), GeneratorController.GenerateWebsite)
+router.post('/generate-website', upload.single('file'), GeneratorController.GenerateWebsite)
 
 export default router

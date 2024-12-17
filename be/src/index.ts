@@ -1,10 +1,11 @@
 import dotenv from 'dotenv'
-
+import path from 'path'
 import express from 'express'
 import cors from 'cors'
 
 import GeneratorRouter from './routes/generate'
-
+import loggerBuilder from './logger'
+const logger = loggerBuilder(__filename)
 dotenv.config()
 
 const port = process.env.SERVER_PORT || '8080'
@@ -25,5 +26,5 @@ app.use(cors(corsOptions))
 app.use('/', GeneratorRouter)
 
 app.listen(port, () => {
-	console.log(`server started at http://localhost:${port}`)
+	logger.info(`server started at http://localhost:${port}`)
 })
