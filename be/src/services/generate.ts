@@ -5,8 +5,8 @@ import AzureService from './azure'
 
 const GenerateWebsite = async (req: GenerateWebsiteReq) => {
 	const file = req.file
-    AzureService.GenerateWebsite(file)
-	return '<html><body>Website generated</body></html>'
+	const resp = await AzureService.GenerateWebsite(file)
+	return resp
 }
 
 const GenerateService = {

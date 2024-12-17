@@ -15,8 +15,8 @@ export const ValidateRequestHandler = (schema: ZodSchema) => (req: Request, res:
 			logger.error('ValidateRequestHandler parse failure %o', message)
 			res.status(400).json({ message })
 		} else {
-            logger.error('ValidateRequestHandler parse failure %o', err)
-            res.status(400).json({ message: 'Bad Request' })
-        }
+			logger.error('ValidateRequestHandler parse failure %o', err)
+			res.status(400).json({ message: 'Bad Request' })
+		}
 	}
 }
