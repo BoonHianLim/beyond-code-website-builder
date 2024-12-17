@@ -139,7 +139,7 @@
             formData.append("model", document.getElementById("aiModel").value);
 
             // Send request to backend (replace URL with your API endpoint)
-            const response = await fetch(API_ENDPOINT + "/generate-app", {
+            const response = await fetch(API_ENDPOINT + "/generate-website", {
               method: "POST",
               body: formData,
             });
