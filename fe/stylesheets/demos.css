@@ -81,7 +81,7 @@ html {
 
 .gjs-pn-panel#gjs-pn-views-container,
 .gjs-pn-panel.gjs-pn-views-container {
-  height: calc(100% - 150px);
+  height: calc(100%);
 }
 
 .ad-cont {
