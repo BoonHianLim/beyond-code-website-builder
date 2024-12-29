@@ -358,6 +358,7 @@ var editor = grapesjs.init({
 		}
 	}
 })
+
 const res = localStorage.getItem('generated_response')
 alert(res)
 editor.setComponents(res)
@@ -375,9 +376,50 @@ editor.I18n.addMessages({
 	}
 })
 
+const pm = editor.Pages
 var pn = editor.Panels
 var modal = editor.Modal
 var cmdm = editor.Commands
+
+const { createApp, ref } = Vue
+
+const app = createApp({
+	data() {
+		return {
+			pages: []
+		}
+	},
+	mounted() {
+		this.setPages(pm.getAll())
+		editor.on('page', () => {
+			this.pages = [...pm.getAll()]
+		})
+	},
+	methods: {
+		setPages(pages) {
+			this.pages = [...pages]
+		},
+		isSelected(page) {
+			return pm.getSelected().id === page.id
+		},
+		selectPage(pageId) {
+			return pm.select(pageId)
+		},
+		removePage(pageId) {
+			return pm.remove(pageId)
+		},
+		addPage() {
+			const len = pm.getAll().length
+			pm.add({
+				name: `Page ${len + 1}`,
+				component: '<div>New page</div>'
+			})
+		}
+	}
+})
+
+// Mount the app to the DOM element
+app.mount('.pages-wrp')
 
 // Update canvas-clear command
 cmdm.add('canvas-clear', function () {
