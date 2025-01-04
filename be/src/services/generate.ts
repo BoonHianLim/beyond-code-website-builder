@@ -1,12 +1,11 @@
 import { GenerateWebsiteReq } from '../types/generate'
-import AzureService from './azure'
+
 // import loggerBuilder from '../logger'
 // const logger = loggerBuilder(__filename)
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const GenerateWebsite = async (req: GenerateWebsiteReq) => {
-	const file = req.file
-	const resp = await AzureService.GenerateWebsite(file)
-	return resp
+	
 }
 
 const GenerateService = {
