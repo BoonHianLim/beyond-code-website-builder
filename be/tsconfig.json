@@ -19,6 +19,6 @@
         "src/**/*"
 , "src/logger.ts"    ],
     "exclude": [
-        "src/public"
+        "src/public",
     ]
 }

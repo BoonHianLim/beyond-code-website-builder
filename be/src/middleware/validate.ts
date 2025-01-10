@@ -7,9 +7,11 @@ const logger = loggerBuilder(__filename)
 export const ValidateRequestHandler = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
 	try {
 		// Validate request here
+		logger.debug('Received request %o', req.body)
 		schema.parse({ body: req.body, query: req.query, params: req.params, file: req.file })
 		next()
 	} catch (err) {
+		logger.debug('ValidateRequestHandler parse failure %o', err)
 		if (err instanceof z.ZodError) {
 			const message = (err as z.ZodError).issues.map((issue) => issue.message).join(', ')
 			logger.error('ValidateRequestHandler parse failure %o', message)

@@ -9,6 +9,8 @@ export enum ModelType {
 }
 export const GenerateWebsiteReqSchema = z.object({
 	file: multerFileSchema,
-	type: z.nativeEnum(ModelType),
-	options: z.record(z.string(), z.unknown()),
+	body: z.object({
+		type: z.nativeEnum(ModelType),
+		options: z.record(z.string(), z.unknown()).optional(),
+	})
 })

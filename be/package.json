@@ -9,6 +9,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.17.1",
     "multer": "^1.4.5-lts.1",
+    "ollama": "^0.5.11",
     "openai": "^4.77.0",
     "pino": "^9.5.0",
     "pino-pretty": "^13.0.0",
@@ -33,9 +34,11 @@
     "dev": "nodemon -e ts --exec yarn run dev:start",
     "dev:start": "npm-run-all build dev:startnode",
     "dev:startnode": "node .",
-    "build": "npm-run-all clean tsc",
+    "build": "npm-run-all clean:dist tsc",
     "tsc": "tsc",
-    "clean": "rimraf dist"
+    "clean:public": "rimraf public",
+    "clean:dist": "rimraf dist",
+    "clean": "npm-run-all clean:public clean:dist"
   },
   "license": "MIT"
 }
