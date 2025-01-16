@@ -30,9 +30,8 @@
 					<div class="model-select">
 						<label for="aiModel">AI Model:</label>
 						<select id="aiModel">
-							<option>Llama 3.2 90B Vision</option>
-							<option>Llama 2.7 40B</option>
-							<option>Llama 1.4 13B</option>
+							<option>Ollama311B</option>
+							<option>AzureGPT4</option>
 						</select>
 					</div>
 					<button class="generate-btn" id="generateBtn">Generate app</button>
@@ -127,7 +126,7 @@
 						// Create FormData to handle file upload
 						const formData = new FormData()
 						formData.append('file', selectedFile)
-						formData.append('model', document.getElementById('aiModel').value)
+						formData.append('type', document.getElementById('aiModel').value)
 
 						// Send request to backend (replace URL with your API endpoint)
 						const response = await fetch(API_ENDPOINT + '/generate-website', {
