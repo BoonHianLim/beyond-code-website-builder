@@ -13,7 +13,7 @@ export const ValidateRequestHandler = (schema: ZodSchema) => (req: Request, res:
 	} catch (err) {
 		logger.debug('ValidateRequestHandler parse failure %o', err)
 		if (err instanceof z.ZodError) {
-			const message = (err as z.ZodError).issues.map((issue) => issue.message).join(', ')
+			const message = (err as z.ZodError).issues.map((issue) => issue.path.join(".") + ": " + issue.message).join(', ')
 			logger.error('ValidateRequestHandler parse failure %o', message)
 			res.status(400).json({ message })
 		} else {

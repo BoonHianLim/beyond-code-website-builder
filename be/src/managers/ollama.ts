@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Ollama } from 'ollama'
 
 import { Adapter, InternalGenerateWebsiteReq } from 'adapter'
 import { IMAGE_LOCATION, OLLAMA_HOST } from '../constant'
 import loggerBuilder from '../logger'
 import { dedent } from '../utils/dedent'
+import { extractHtmlSubstring } from '../utils/extract'
+import { StatusCodeError } from '../utils/error'
 
 const logger = loggerBuilder(__filename)
 
@@ -11,10 +14,43 @@ const ollamaHost = OLLAMA_HOST || 'http://localhost:8888'
 const ollama = new Ollama({ host: ollamaHost })
 
 const GenerateWebsite = async (req: InternalGenerateWebsiteReq) => {
-	return generateWithMultimodal(req)
+	return generateWithZeroShot(req)
 }
 
+const generateWithZeroShot = async (req: InternalGenerateWebsiteReq) => {
+	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+	// Make a request to Azure chatgpt 4o to generate a website
+	const response = await ollama.chat({
+		model: 'llama3.2-vision:90B',
+		messages: [
+			{
+				role: 'user',
+				content: `You are a code generator with plenty knowledge in frontend. You are given a sketch of a website from the user, and then you will return code for it using vanilla HTML and vanilla CSS. Follow the instructions carefully.
+1. You are to generate the code and not ask any question.
+2. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
+3. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
+4. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
+5. Make sure to code every part of the sketch including any headers, footers, etc.
+6. Use the exact text from the sketch for the UI elements.
+7. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+8. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
+9. Use margin and padding to style the components and ensure the components are spaced out nicely.
+10. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
+11. Make the design look nice and don't have borders around the entire website even if that's in the sketch.
+12. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.`,
+				images: [IMAGE_LOCATION + req.fileName]
+			}
+		],
+		stream: false
+	})
+	logger.debug('response from ollama: %o %s', response, response.message.content.replace(/\n/g, '\n'))
 
+	const extractedHtml = extractHtmlSubstring(response.message.content)
+    if (!extractedHtml) {
+        throw new StatusCodeError(500, 'Could not extract html from response')
+    }
+    return extractedHtml
+}
 const generateWithMultimodal = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
 	// Make a request to Azure chatgpt 4o to generate a website
@@ -35,7 +71,7 @@ const generateWithMultimodal = async (req: InternalGenerateWebsiteReq) => {
 		stream: false
 	})
 	logger.debug('response from ollama: %o', response)
-    
+
 	return response.message.content
 }
 
@@ -263,10 +299,7 @@ const examples = `<html>
 </body>
 </html>`
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {
-    
-}
+const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {}
 const OllamaManager: Adapter = {
 	GenerateWebsite
 }

@@ -11,6 +11,6 @@ export const GenerateWebsiteReqSchema = z.object({
 	file: multerFileSchema,
 	body: z.object({
 		type: z.nativeEnum(ModelType),
-		options: z.record(z.string(), z.unknown()).optional(),
+		options: z.record(z.string(), z.unknown()).optional()
 	})
 })
