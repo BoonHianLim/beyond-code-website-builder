@@ -1,14 +1,14 @@
-import dotenv from 'dotenv'
+
 import express from 'express'
 import cors from 'cors'
 
 import GeneratorRouter from './routes/generate'
+import { ExpressErrorHandler } from './middleware/errorHandler'
 import loggerBuilder from './logger'
+import { SERVER_PORT } from './constant'
 const logger = loggerBuilder(__filename)
 
-dotenv.config()
-
-const port = process.env.SERVER_PORT || '8080'
+const port = SERVER_PORT || '8080'
 const app = express()
 
 app.use(express.json())
@@ -22,6 +22,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 
+app.use(ExpressErrorHandler);
 // Paths
 app.use('/', GeneratorRouter)
 

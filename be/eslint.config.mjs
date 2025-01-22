@@ -3,7 +3,10 @@ import tseslint from 'typescript-eslint'
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-	{ files: ['**/*.{js,mjs,cjs,ts}'] },
+	{
+		ignores: ['dist/**']
+	},
+	{ files: ['**/*.{ts}'] },
 	{ languageOptions: { globals: globals.node } },
 	...tseslint.configs.recommended,
 	{

@@ -306,6 +306,9 @@ var editor = grapesjs.init({
 			}
 		]
 	},
+	storageManager: {
+		autoload: false
+	},
 	plugins: [
 		'gjs-blocks-basic',
 		'grapesjs-plugin-forms',
@@ -358,10 +361,6 @@ var editor = grapesjs.init({
 		}
 	}
 })
-
-const res = localStorage.getItem('generated_response')
-alert(res)
-editor.setComponents(res)
 
 editor.I18n.addMessages({
 	en: {
@@ -560,6 +559,63 @@ editor.on('load', function () {
 	// Open block manager
 	var openBlocksBtn = editor.Panels.getButton('views', 'open-blocks')
 	openBlocksBtn && openBlocksBtn.set('active', 1)
+
+	// Get current project data
+	const storageManager = editor.StorageManager
+	storageManager
+		.load()
+		.then((projectData) => {
+			const res = localStorage.getItem('generated_response')
+			if (!res) {
+				editor.loadProjectData(projectData)
+				return
+			}
+			if (projectData && Object.keys(projectData).length > 0) {
+				console.log('Existing project data loaded:', projectData)
+				editor.loadProjectData(projectData)
+				// Create the modal content
+				const modalContent = `
+					<div style="padding: 10px; text-align: center;">
+						<p>Detected saved data. Do you want to overwrite your saved data?</p>
+						<button id="load-data-yes" style="margin-right: 10px;">Yes</button>
+						<button id="load-data-no">No</button>
+					</div>
+				`
+
+				// Set the modal content
+				modal.setContent(modalContent)
+
+				// Open the modal
+				modal.open()
+
+				// Add event listeners to the buttons
+				const yesButton = document.getElementById('load-data-yes')
+				const noButton = document.getElementById('load-data-no')
+
+				yesButton.addEventListener('click', async () => {
+					editor.setComponents(res)
+					modal.close() // Close the modal
+				})
+
+				noButton.addEventListener('click', () => {
+					console.log('User chose not to load data.')
+					try {
+						editor.loadProjectData(projectData)
+					} catch (error) {
+						console.error('Failed to load project data:', error)
+					} finally {
+						modal.close() // Close the modal after loading data
+					}
+				})
+			} else {
+				console.log('No existing project data found.')
+				editor.setComponents(res)
+			}
+			localStorage.removeItem('generated_response')
+		})
+		.catch((error) => {
+			console.error('Failed to load project data:', error)
+		})
 })
 ;(function (i, s, o, g, r, a, m) {
 	i['GoogleAnalyticsObject'] = r
