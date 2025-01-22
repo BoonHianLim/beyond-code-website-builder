@@ -8,8 +8,6 @@ import loggerBuilder from './logger'
 import { SERVER_PORT } from './constant'
 const logger = loggerBuilder(__filename)
 
-
-
 const port = SERVER_PORT || '8080'
 const app = express()
 

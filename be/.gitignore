@@ -5,3 +5,4 @@ dist/
 
 # gitignore for output test html files
 output*.html
+.log

@@ -562,10 +562,14 @@ editor.on('load', function () {
 
 	// Get current project data
 	const storageManager = editor.StorageManager
-	alert(storageManager.load)
 	storageManager
 		.load()
 		.then((projectData) => {
+			const res = localStorage.getItem('generated_response')
+			if (!res) {
+				editor.loadProjectData(projectData)
+				return
+			}
 			if (projectData && Object.keys(projectData).length > 0) {
 				console.log('Existing project data loaded:', projectData)
 				editor.loadProjectData(projectData)
@@ -589,8 +593,6 @@ editor.on('load', function () {
 				const noButton = document.getElementById('load-data-no')
 
 				yesButton.addEventListener('click', async () => {
-					const res = localStorage.getItem('generated_response')
-					alert(res)
 					editor.setComponents(res)
 					modal.close() // Close the modal
 				})
@@ -607,10 +609,9 @@ editor.on('load', function () {
 				})
 			} else {
 				console.log('No existing project data found.')
-				const res = localStorage.getItem('generated_response')
-				alert(res)
 				editor.setComponents(res)
 			}
+			localStorage.removeItem('generated_response')
 		})
 		.catch((error) => {
 			console.error('Failed to load project data:', error)

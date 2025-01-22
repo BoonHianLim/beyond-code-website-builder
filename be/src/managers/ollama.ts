@@ -8,51 +8,53 @@ import { dedent } from '../utils/dedent'
 import { extractHtmlSubstring } from '../utils/extract'
 import { StatusCodeError } from '../utils/error'
 
+const MIN_IN_MILLISECONDS = 60 * 1000
+const noTimeoutFetch = (input: string | URL | globalThis.Request, init?: RequestInit) => {
+	const someInit = init || {}
+	return fetch(input, { ...someInit, signal: AbortSignal.timeout(10 * MIN_IN_MILLISECONDS) })
+}
+
 const logger = loggerBuilder(__filename)
 
 const ollamaHost = OLLAMA_HOST || 'http://localhost:8888'
-const ollama = new Ollama({ host: ollamaHost })
+const ollama = new Ollama({ host: ollamaHost, fetch: noTimeoutFetch })
 
 const GenerateWebsite = async (req: InternalGenerateWebsiteReq) => {
-	return generateWithZeroShot(req)
+	return generateWithChainOfThought(req)
 }
 
 const generateWithZeroShot = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+    logger.trace('prompt: %s', getRolePlayingPrompt())
 	// Make a request to Azure chatgpt 4o to generate a website
 	const response = await ollama.chat({
 		model: 'llama3.2-vision:90B',
 		messages: [
 			{
 				role: 'user',
-				content: `You are a code generator with plenty knowledge in frontend. You are given a sketch of a website from the user, and then you will return code for it using vanilla HTML and vanilla CSS. Follow the instructions carefully.
-1. You are to generate the code and not ask any question.
-2. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
-3. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
-4. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
-5. Make sure to code every part of the sketch including any headers, footers, etc.
-6. Use the exact text from the sketch for the UI elements.
-7. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
-8. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
-9. Use margin and padding to style the components and ensure the components are spaced out nicely.
-10. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
-11. Make the design look nice and don't have borders around the entire website even if that's in the sketch.
-12. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.`,
+				content: getRolePlayingPrompt(),
 				images: [IMAGE_LOCATION + req.fileName]
 			}
 		],
-		stream: false
+		stream: false,
+		options: {
+			temperature: 0,
+			stop: ['</html>'],
+			seed: 0
+		}
 	})
 	logger.debug('response from ollama: %o %s', response, response.message.content.replace(/\n/g, '\n'))
 
-	const extractedHtml = extractHtmlSubstring(response.message.content)
-    if (!extractedHtml) {
-        throw new StatusCodeError(500, 'Could not extract html from response')
-    }
-    return extractedHtml
+	const extractedHtml = extractHtmlSubstring(response.message.content + '</html>')
+	if (!extractedHtml) {
+		throw new StatusCodeError(500, 'Could not extract html from response')
+	}
+	return extractedHtml
 }
-const generateWithMultimodal = async (req: InternalGenerateWebsiteReq) => {
+
+const generateWithFewShot = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+    logger.trace('prompt: %s', getCodingPrompt())
 	// Make a request to Azure chatgpt 4o to generate a website
 	const response = await ollama.chat({
 		model: 'llama3.2-vision:90B',
@@ -73,6 +75,35 @@ const generateWithMultimodal = async (req: InternalGenerateWebsiteReq) => {
 	logger.debug('response from ollama: %o', response)
 
 	return response.message.content
+}
+
+const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {
+	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+    logger.trace('prompt: %s', getChainOfThoughtPrompt())
+	// Make a request to Azure chatgpt 4o to generate a website
+	const response = await ollama.chat({
+		model: 'llama3.2-vision:90B',
+		messages: [
+			{
+				role: 'user',
+				content: getChainOfThoughtPrompt(),
+				images: [IMAGE_LOCATION + req.fileName]
+			}
+		],
+		stream: false,
+		options: {
+			temperature: 0,
+			stop: ['</html>'],
+			seed: 0
+		}
+	})
+	logger.debug('response from ollama: %o %s', response, response.message.content.replace(/\n/g, '\n'))
+
+	const extractedHtml = extractHtmlSubstring(response.message.content + '</html>')
+	if (!extractedHtml) {
+		throw new StatusCodeError(500, 'Could not extract html from response')
+	}
+	return extractedHtml
 }
 
 const getCodingPrompt = () => {
@@ -299,7 +330,59 @@ const examples = `<html>
 </body>
 </html>`
 
-const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {}
+const getRolePlayingPrompt = () => {
+	return `You are an extremely helpful frontend developer. Everyone seems you as the hero of the city, and always come to you when they want to build a website.
+They understand if sometimes you are unable to help them, but they know you will always try your best to help them, and you have always been providing them with the best website even without enough context.
+As you are a frontend developer, you can of course see and analyze attached pictures given by the people from the city. You know they are skectches of website, and you understand sometimes the sketch can be messy, but you still try your best to generate the website for them with your plenty knowledge in frontend design and frontend development. You do this and it has always been a great help for the people in the city.
+
+After many years of working with converting sketches to real websites, you have made up some rules for yourself to follow when building the website from the sketch. Here are the rules:
+1. You are to generate the code and not ask any question.
+2. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
+3. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
+4. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
+5. Make sure to code every part of the sketch including any headers, footers, etc.
+6. Use the exact text from the sketch for the UI elements.
+7. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+8. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
+9. Use margin and padding to style the components and ensure the components are spaced out nicely.
+10. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
+11. Make the design look nice and don't have borders around the entire website even if that's in the sketch.
+12. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
+
+Today is a new day and you have received a new sketch from the people in the city. You are to generate the website from the sketch. The people in the city are very grateful for your help and they know you will always try your best to help them. They are very excited to see the website you will generate for them. They know you will do a great job and they are very grateful for your help.`
+}
+
+const getChainOfThoughtPrompt = () => {
+	return (
+		getRolePlayingPrompt() +
+		`
+Let's think step by step.`
+	)
+}
+
+const getReverseChainOfThoughtPrompt = () => {
+    return `You are an extremely helpful frontend developer. Everyone seems you as the hero of the city, and always come to you when they want to build a website.
+They understand if sometimes you are unable to help them, but they know you will always try your best to help them, and you have always been providing them with the best website even without enough context.
+As you are a frontend developer, you can of course see and analyze attached pictures given by the people from the city. You know they are skectches of website, and you understand sometimes the sketch can be messy, but you still try your best to generate the website for them with your plenty knowledge in frontend design and frontend development. You do this and it has always been a great help for the people in the city.
+
+After many years of working with converting sketches to real websites, you have made up some rules for yourself to follow when building the website from the sketch. Here are the rules:
+1. Let's think step by step.
+2. You are to generate the code and not ask any question.
+3. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
+4. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
+5. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
+6. Make sure to code every part of the sketch including any headers, footers, etc.
+7. Use the exact text from the sketch for the UI elements.
+8. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+9. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
+10. Use margin and padding to style the components and ensure the components are spaced out nicely.
+11. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
+12. Make the design look nice and don't have borders around the entire website even if that's in the sketch.
+13. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
+
+Today is a new day and you have received a new sketch from the people in the city. You are to generate the website from the sketch. The people in the city are very grateful for your help and they know you will always try your best to help them. They are very excited to see the website you will generate for them. They know you will do a great job and they are very grateful for your help.`
+}
+
 const OllamaManager: Adapter = {
 	GenerateWebsite
 }
