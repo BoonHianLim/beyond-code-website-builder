@@ -27,6 +27,7 @@ app.use(ExpressErrorHandler);
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+app.use(ExpressErrorHandler);
 // Paths
 app.get('/', (req, res) => {
 	res.send('Server is running')
