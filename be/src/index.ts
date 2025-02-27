@@ -3,9 +3,11 @@ import express from 'express'
 import cors from 'cors'
 
 import GeneratorRouter from './routes/generate'
+import ComponentRouter from './routes/components'
 import { ExpressErrorHandler } from './middleware/errorHandler'
 import loggerBuilder from './logger'
 import { SERVER_PORT } from './constant'
+import path from 'path'
 const logger = loggerBuilder(__filename)
 
 const port = SERVER_PORT || '8080'
@@ -21,10 +23,16 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
-
 app.use(ExpressErrorHandler);
+// Serve static files from the "public" folder
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
 // Paths
+app.get('/', (req, res) => {
+	res.send('Server is running')
+});
 app.use('/', GeneratorRouter)
+app.use('/components', ComponentRouter)
 
 app.listen(port, () => {
 	logger.info(`server started at http://localhost:${port}`)

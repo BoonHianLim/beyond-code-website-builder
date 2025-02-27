@@ -16,16 +16,100 @@ const noTimeoutFetch = (input: string | URL | globalThis.Request, init?: Request
 
 const logger = loggerBuilder(__filename)
 
-const ollamaHost = OLLAMA_HOST || 'http://localhost:8888'
+const ollamaHost = 'http://127.0.0.1:11434'
 const ollama = new Ollama({ host: ollamaHost, fetch: noTimeoutFetch })
 
 const GenerateWebsite = async (req: InternalGenerateWebsiteReq) => {
-	return generateWithChainOfThought(req)
+	const sketchDescription = await analyzeSketch(req)
+	return generateWithSketchDescription(req, sketchDescription)
+}
+
+const analyzeSketch = async (req: InternalGenerateWebsiteReq) => {
+	const descriptionPrompt = `Describe the attached website sketch in detail. I will send what you give me to a developer to create a website based on the sketch I sent you. Please listen very carefully. It's very important for my job that you follow these instructions:
+
+- Think step by step and describe the UI in great detail.
+- Make sure to describe where everything is in the UI so the developer can recreate it and if how elements are aligned
+- Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. Match the colors and sizes exactly.
+- Make sure to mention every part of the sketch including any headers, footers, sidebars, etc.
+- Make sure to use the exact text from the sketch.
+`
+	logger.trace('prompt: %s', descriptionPrompt)
+	const response = await ollama.chat({
+		model: 'llama3.2-vision:90B',
+		messages: [
+			{
+				role: 'user',
+				content: descriptionPrompt,
+				images: [IMAGE_LOCATION + req.fileName]
+			}
+		],
+		stream: false,
+		options: {
+			temperature: 0,
+			seed: 0
+		}
+	})
+	logger.debug('analyzeSketch response from ollama: %o', response)
+	return response.message.content
+}
+
+const generateWithSketchDescriptionv2 = async (req: InternalGenerateWebsiteReq, sketchDescription: string) => {
+	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+	logger.trace('prompt: %s', getAnalyzeSketchAfterPrompt(sketchDescription))
+	// Make a request to Azure chatgpt 4o to generate a website
+	const response = await ollama.chat({
+		model: 'llama3.2-vision:90B',
+		messages: [
+			{
+				role: 'system',
+				content: getAnalyzeSketchSystemPrompt()
+			}
+		],
+		stream: false,
+		options: {
+			temperature: 0,
+			seed: 0
+		}
+	})
+	logger.debug('response from ollama: %o %s', response, response.message.content.replace(/\n/g, '\n'))
+
+	const extractedHtml = extractHtmlSubstring(response.message.content + '</html>')
+	if (!extractedHtml) {
+		throw new StatusCodeError(500, 'Could not extract html from response')
+	}
+	return extractedHtml
+}
+
+const generateWithSketchDescription = async (req: InternalGenerateWebsiteReq, sketchDescription: string) => {
+	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
+	logger.trace('prompt: %s', getAnalyzeSketchAfterPrompt(sketchDescription))
+	// Make a request to Azure chatgpt 4o to generate a website
+	const response = await ollama.chat({
+		model: 'llama3.2-vision:90B',
+		messages: [
+			{
+				role: 'user',
+				content: getAnalyzeSketchAfterPrompt(sketchDescription)
+			}
+		],
+		stream: false,
+		options: {
+			temperature: 0,
+			seed: 0
+		}
+	})
+	logger.debug('response from ollama: %o %s', response, response.message.content.replace(/\n/g, '\n'))
+
+	const extractedHtml = extractHtmlSubstring(response.message.content + '</html>')
+	if (!extractedHtml) {
+		throw new StatusCodeError(500, 'Could not extract html from response')
+	}
+	return extractedHtml
 }
 
 const generateWithZeroShot = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
-    logger.trace('prompt: %s', getRolePlayingPrompt())
+	logger.trace('prompt: %s', getRolePlayingPrompt())
 	// Make a request to Azure chatgpt 4o to generate a website
 	const response = await ollama.chat({
 		model: 'llama3.2-vision:90B',
@@ -54,7 +138,7 @@ const generateWithZeroShot = async (req: InternalGenerateWebsiteReq) => {
 
 const generateWithFewShot = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
-    logger.trace('prompt: %s', getCodingPrompt())
+	logger.trace('prompt: %s', getCodingPrompt())
 	// Make a request to Azure chatgpt 4o to generate a website
 	const response = await ollama.chat({
 		model: 'llama3.2-vision:90B',
@@ -79,7 +163,7 @@ const generateWithFewShot = async (req: InternalGenerateWebsiteReq) => {
 
 const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {
 	logger.info('sending request to ollama for file %s', IMAGE_LOCATION + req.fileName)
-    logger.trace('prompt: %s', getChainOfThoughtPrompt())
+	logger.trace('prompt: %s', getChainOfThoughtPrompt())
 	// Make a request to Azure chatgpt 4o to generate a website
 	const response = await ollama.chat({
 		model: 'llama3.2-vision:90B',
@@ -107,32 +191,19 @@ const generateWithChainOfThought = async (req: InternalGenerateWebsiteReq) => {
 }
 
 const getCodingPrompt = () => {
-	let systemPrompt = `
-You are an expert frontend developer. You will be given a low-fidelity sketch of a website from the user, and then you will return code for it using vanilla HTML and vanilla CSS. Follow the instructions carefully, it is very important for my job. I will tip you $1 million if you do a good job. You are to generate the code and not ask any question.  
-
-- Think carefully step by step about how to recreate the UI described in the prompt. 
-- Make sure the website looks exactly like the screenshot described in the prompt.
-- Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. Match the colors and sizes exactly.
-- Make sure to code every part of the description including any headers, footers, etc.
-- Use the exact text from the description for the UI elements.
-- Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
-- Repeat elements as needed to match the description. For example, if there are 15 items, the code should have 15 items. DO NOT LEAVE comments like "<!-- Repeat for each news item -->" or bad things will happen.
-- For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
-- Use margin and padding to style the components and ensure the components are spaced out nicely
-- If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
-- Make the design look nice and don't have borders around the entire website even if that's described
-  `
-
-	systemPrompt += `
-    NO OTHER LIBRARIES (e.g. zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
-  `
-
-	systemPrompt += `
-  Here are some examples of good outputs:
-  `
-
-	systemPrompt += examples
-	return dedent(systemPrompt)
+	return `You are a code generator with vision and plenty knowledge in frontend design and frontend development. You are given a sketch of a website from the user, and then you will return code for it using vanilla HTML and vanilla CSS. Follow the instructions carefully.
+1. You are to generate the code and not ask any question.
+2. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
+3. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
+4. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
+5. Make sure to code every part of the sketch including any headers, footers, etc.
+6. Use the exact text from the sketch for the UI elements.
+7. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+8. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
+9. Use margin and padding to style the components and ensure the components are spaced out nicely.
+10. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
+11. Make the design look nice and don't have borders around the entire website even if that's in the sketch.
+12. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.`
 }
 
 const examples = `<html>
@@ -361,7 +432,7 @@ Let's think step by step.`
 }
 
 const getReverseChainOfThoughtPrompt = () => {
-    return `You are an extremely helpful frontend developer. Everyone seems you as the hero of the city, and always come to you when they want to build a website.
+	return `You are an extremely helpful frontend developer. Everyone seems you as the hero of the city, and always come to you when they want to build a website.
 They understand if sometimes you are unable to help them, but they know you will always try your best to help them, and you have always been providing them with the best website even without enough context.
 As you are a frontend developer, you can of course see and analyze attached pictures given by the people from the city. You know they are skectches of website, and you understand sometimes the sketch can be messy, but you still try your best to generate the website for them with your plenty knowledge in frontend design and frontend development. You do this and it has always been a great help for the people in the city.
 
@@ -383,6 +454,38 @@ After many years of working with converting sketches to real websites, you have 
 Today is a new day and you have received a new sketch from the people in the city. You are to generate the website from the sketch. The people in the city are very grateful for your help and they know you will always try your best to help them. They are very excited to see the website you will generate for them. They know you will do a great job and they are very grateful for your help.`
 }
 
+const getAnalyzeSketchSystemPrompt = () => {
+	return `You are an extremely helpful frontend developer. Everyone seems you as the hero of the city, and always come to you when they want to build a website.
+They understand if sometimes you are unable to help them, but they know you will always try your best to help them, and you have always been providing them with the best website even without enough context.
+They will always pass you a list of user requirements, and then you will try your best to generate the website for them with your plenty knowledge in frontend design and frontend development. You do this and it has always been a great help for the people in the city.
+
+After many years of working with converting user requirements to real websites, you have made up some rules for yourself to follow when building the website from the user requirements. Here are the rules:
+1. You are to generate the code and not ask any question.
+2. You are to not apologize and try your best to generate the code, despite you think you are unable to do so.
+3. You should return the code in one piece. The css should be included together with the html code, inside a <style> tag. Please ONLY return the html code, NO backticks or language names.
+4. Pay close attention to background color, text color, font size, font family, padding, margin, border, etc. 
+5. Make sure to code every part of the user requirements including any headers, footers, etc.
+6. Use the exact text from the user requirements for the UI elements.
+7. Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+8. If you need a placeholder image, For all images, please use an svg with a white, gray, or black background and don't try to import them locally or from the internet.
+9. Use margin and padding to style the components and ensure the components are spaced out nicely.
+10. If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
+11. Make the design look nice and don't have borders around the entire website even if that's in the user requirements.
+12. NO OTHER LIBRARIES (e.g. TailwindCSS, zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
+
+Today is a new day and you have received new user requirements from the people in the city. You are to generate the website from the user requirements. The people in the city are very grateful for your help and they know you will always try your best to help them. They are very excited to see the website you will generate for them. They know you will do a great job and they are very grateful for your help.`
+}
+const getAnalyzeSketchAfterPrompt = (sketchDescription: string) => {
+	return (
+		getAnalyzeSketchSystemPrompt() +
+		`
+The user requirements are as follows:
+` +
+		sketchDescription +
+		`
+Let's think step by step. Make sure to return the code in one piece.`
+	)
+}
 const OllamaManager: Adapter = {
 	GenerateWebsite
 }

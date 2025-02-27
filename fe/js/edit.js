@@ -19,6 +19,7 @@ var images = [
 var editor = grapesjs.init({
 	height: '100%',
 	container: '#gjs',
+	dragMode: 'absolute',
 	fromElement: true,
 	showOffsets: true,
 	assetManager: {
