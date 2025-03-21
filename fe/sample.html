@@ -15,22 +15,6 @@
 				display: flex;
 				flex-direction: row;
 
-				[lang] {
-					display: none;
-				}
-
-				.zh {
-					[lang='zh'] {
-						display: inline;
-					}
-				}
-
-				.en {
-					[lang='en'] {
-						display: inline;
-					}
-				}
-
 				.menu {
 					width: 350px;
 					flex-shrink: 0;
@@ -61,7 +45,7 @@
 			}
 
 			.editor {
-				height: 135px;
+				height: 155px;
 				background-color: #ddd;
 				padding: 6px;
 
@@ -137,45 +121,44 @@
 
 	<body>
 		<div id="app">
-			<div class="menu" :class="{ zh: lang == 'zh', en: lang == 'en'}">
+			<div class="menu">
 				<div class="actions">
-					<span style="float: right">
-						&#127758;<a @click="lang='en'" v-show="lang=='zh'">En</a><a @click="lang='zh'" v-show="lang=='en'">中</a>
-					</span>
-					<button @click="exportHtml">
-						<span lang="en">Export HTML</span>
-						<span lang="zh">匯出 HTML 檔</span>
+					<span>Model: </span>
+					<select id="model-select">
+						<option>llama3.2</option>
+						<option>gemma2:2b-instruct-fp16</option>
+						<option>deepseek-r1:8b</option>
+						<option>deepseek-r1:latest</option>
+					</select>
+					<button v-if="hotspots.length >= 1" onclick="submit_btn_onClick()">
+						<span lang="en">Next Step</span>
 					</button>
 				</div>
+
 				<div class="editor">
 					<table v-if="selectedHotspot">
 						<tr>
 							<td class="hdr">
-								<span lang="en">Link</span>
-								<span lang="zh">連結</span>
+								<span lang="en">Type</span>
 							</td>
 							<td colspan="3">
-								<input type="text" v-model="selectedHotspot.link" placeholder="Link" />
-								&nbsp;
-								<button @click="hotspots.splice(hotspots.indexOf(selectedHotspot), 1)">
-									<span lang="en">Delete</span>
-									<span lang="zh">刪除</span>
-								</button>
+								<input type="text" v-model="selectedHotspot.type" placeholder="Type" />
+							</td>
+						</tr>
+						<tr>
+							<td class="hdr">
+								<span lang="en">Content</span>
+							</td>
+							<td colspan="3">
+								<input type="text" v-model="selectedHotspot.content" placeholder="Content" />
 							</td>
 						</tr>
 						<tr>
 							<td class="hdr">
 								<span lang="en">Options</span>
-								<span lang="zh"> 選項</span>
 							</td>
 							<td colspan="3">
-								<label><input type="checkbox" v-model="selectedHotspot.js" />JavaScript</label>
-								&nbsp;
-								<label
-									><input type="checkbox" v-model="selectedHotspot.ext" />
-									<span lang="en">New window</span>
-									<span lang="zh">新視窗開啟</span>
-								</label>
+								<label><input type="checkbox" v-model="selectedHotspot.interactivity" />Interactivity</label>
 							</td>
 						</tr>
 						<tr>
@@ -191,10 +174,12 @@
 							<td><input type="number" v-model="selectedHotspot.height" step="0.1" /> %</td>
 						</tr>
 					</table>
+					<button v-if="selectedHotspot" @click="hotspots.splice(hotspots.indexOf(selectedHotspot), 1)">
+						<span lang="en">Delete</span>
+					</button>
 				</div>
 				<div class="list">
 					<span lang="en">Image:</span>
-					<span lang="zh">圖檔:</span>
 					<input v-model.lazy="imgPath" type="text" placeholder="Image path" style="width: 250px" />
 					<input type="file" id="imageInput" accept="image/*" />
 					<div
@@ -204,35 +189,43 @@
 						@click="selectedHotspot = hotspot"
 					>
 						<span lang="en">Block</span>
-						<span lang="zh">區塊</span>
-						{{idx}}. <span>{{hotspot.link}}</span>
+						{{idx}}. <span>{{hotspot.type}}</span>: <span>{{hotspot.content}}</span>
 					</div>
 				</div>
 			</div>
 			<div class="canvas">
-				<img :src="imgPath" style="pointer-events: none" alt="eap" referrerpolicy="no-referrer" />
+				<img
+					:src="imgPath"
+					style="
+						pointer-events: none;
+						-drag: none;
+						-moz-user-select: none;
+						-webkit-user-drag: none;
+						-webkit-user-select: none;
+					"
+					alt="eap"
+					referrerpolicy="no-referrer"
+				/>
 				<div
 					v-for="hotspot in hotspots"
 					class="hotspot"
 					:class="{active: hotspot === selectedHotspot}"
 					@click="selectedHotspot = hotspot"
-					:data-link="hotspot.link"
-					:data-js="hotspot.js"
-					:data-ext="hotspot.ext"
+					:data-type="hotspot.type"
 					:style="{left: hotspot.x + '%', top: hotspot.y + '%', width: hotspot.width + '%', height: hotspot.height + '%'}"
 				></div>
 			</div>
 		</div>
 		<script>
 			class Hotspot {
-				constructor(x, y, width, height, link) {
+				constructor(x, y, width, height, type, content, interactivity) {
 					this.x = x
 					this.y = y
 					this.width = width
 					this.height = height
-					this.link = link ?? '#'
-					this.js = false
-					this.ext = false
+					this.type = type ?? '#'
+					this.content = content ?? '#'
+					this.interactivity = interactivity
 				}
 			}
 			const app = Vue.createApp({
@@ -240,7 +233,6 @@
 					return {
 						hotspots: [],
 						selectedHotspot: null,
-						lang: navigator.language.startsWith('zh') ? 'zh' : 'en',
 						imgPath: 'https://i.imgur.com/R8yWT5b.png'
 					}
 				},
@@ -248,9 +240,9 @@
 					imgPath() {
 						this.selectedHotspot = null
 
-						const parsed_result = parse(this.imgPath)
-						this.hotspots = convert_to_hotspot(parsed_result)
-						alert('Image loaded')
+						parse(this.imgPath).then((parsed_result) => {
+							this.hotspots = convert_to_hotspot(parsed_result)
+						})
 					}
 				},
 				methods: {}
@@ -279,8 +271,10 @@
 				const height = (currRect.offsetHeight / canvas.offsetHeight) * 100
 				const left = (currRect.offsetLeft / canvas.offsetWidth) * 100
 				const top = (currRect.offsetTop / canvas.offsetHeight) * 100
-				vm.hotspots.push(new Hotspot(left.toFixed(3), top.toFixed(3), width.toFixed(3), height.toFixed(3)))
-				vm.selectedHotspot = vm.hotspots[vm.hotspots.length - 1]
+				const newHotspot = new Hotspot(left.toFixed(3), top.toFixed(3), width.toFixed(3), height.toFixed(3))
+				vm.hotspots.push(newHotspot)
+				vm.hotspots.sort((a, b) => a.y - b.y || a.x - b.x)
+				vm.selectedHotspot = vm.hotspots[vm.hotspots.indexOf(newHotspot)]
 				currRect.remove()
 				currRect = null
 			})
@@ -306,39 +300,76 @@
 			})
 		</script>
 		<script>
-			const parse = (img) => {
-				return [
-					{
-						type: 'icon',
-						bbox: [0.4698302447795868, 0.26059234142303467, 0.6608346104621887, 0.364967405796051],
-						interactivity: true,
-						content: 'Sedrch ',
-						source: 'box_yolo_content_ocr'
-					},
-					{
-						type: 'icon',
-						bbox: [0.6996398568153381, 0.39369264245033264, 0.7516666054725647, 0.48442479968070984],
-						interactivity: true,
-						content: 'Find',
-						source: 'box_yolo_content_yolo'
-					},
-					{
-						type: 'icon',
-						bbox: [0.7608910799026489, 0.39288151264190674, 0.7859874367713928, 0.4870404303073883],
-						interactivity: true,
-						content: 'Curve',
-						source: 'box_yolo_content_yolo'
-					}
-				]
+			const isLocal =
+				window.location.hostname === 'localhost' ||
+				window.location.hostname === '127.0.0.1' ||
+				!window.location.hostname
+
+			const API_ENDPOINT = isLocal ? 'http://localhost:8081' : 'https://api.yourproductionurl.com'
+
+			const parse = async (img_url) => {
+				const img_response = await fetch(img_url)
+				let data = await img_response.blob()
+				let metadata = {
+					type: 'image/jpeg'
+				}
+				let file = new File([data], 'test.jpg', metadata)
+
+				const formData = new FormData()
+				formData.append('file', file)
+				// Send request to backend (replace URL with your API endpoint)
+				const response = await fetch(API_ENDPOINT + '/parser/file', {
+					method: 'POST',
+					body: formData
+				})
+
+				if (response.ok) {
+					// Success: Parse the response and u pdate the UI
+					const result = await response.json()
+					return result.parsed_content_list
+				} else {
+					// Failure: Show an alert and keep the user onthe page
+					alert('Failed to generate the app. Please try again.')
+				}
 			}
 			const convert_to_hotspot = (parsed_result) => {
 				const res = []
+				parsed_result.sort((a, b) => a.bbox[1] - b.bbox[1] || a.bbox[0] - b.bbox[0])
 				parsed_result.forEach((item, idx) => {
-					const { bbox, content } = item
+					const { type, bbox, content, interactivity } = item
 					const [x1, y1, x2, y2] = bbox
-					res.push(new Hotspot(x1 * 100, y1 * 100, (x2 - x1) * 100, (y2 - y1) * 100, content))
+					res.push(new Hotspot(x1 * 100, y1 * 100, (x2 - x1) * 100, (y2 - y1) * 100, type, content, interactivity))
 				})
 				return res
+			}
+
+			const submit_btn_onClick = () => {
+				const model = document.getElementById('model-select').value
+				const objects = vm.hotspots
+				llmProcess(model, objects).then((response) => {
+					if (response.ok) {
+						// Success: Redirect to edit.html
+						response.json().then((res) => {
+							localStorage.setItem('generated_response', res)
+							window.location.href = 'edit.html'
+						})
+					} else {
+						// Failure: Show an alert and keep the user on the page
+						alert('Failed to generate the app. Please try again.')
+					}
+				})
+			}
+			const llmProcess = async (model, objects) => {
+				return await fetch(API_ENDPOINT + '/generator/struct', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						model: model,
+						objects: objects
+					})
+				})
 			}
 		</script>
 	</body>

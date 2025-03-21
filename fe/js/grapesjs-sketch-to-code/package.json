@@ -1,0 +1,23 @@
+{
+  "name": "grapesjs-sketch-to-code",
+  "version": "1.0.49",
+  "description": "Grapesjs Sketch To Code",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR-USERNAME/grapesjs-sketch-to-code.git"
+  },
+  "scripts": {
+    "start": "grapesjs-cli serve",
+    "build": "grapesjs-cli build",
+    "bump": "npm version patch -m 'Bump v%s'"
+  },
+  "keywords": [
+    "grapesjs",
+    "plugin"
+  ],
+  "devDependencies": {
+    "grapesjs-cli": "^4.1.3"
+  },
+  "license": "MIT"
+}
