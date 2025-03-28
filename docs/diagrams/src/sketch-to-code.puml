@@ -1,0 +1,67 @@
+@startuml Sketch-to-code
+
+title Full Sketch-to-Code Workflow via Plugin Integration
+skinparam Padding 0
+skinparam BoxPadding 0
+
+
+hide footbox
+box "Website Builder Side" #lightgray
+    actor User as usr
+    
+    participant "Website Builder" as wb
+end box
+box "Adapter Layer (Shared Component)" #EEEEEE
+    participant "Website Builder Adapter" as wbAdapter
+    note over wbAdapter
+        Acts as a bridge to the Website Builder / Plugin Server
+    end note
+end box
+box "Plugin Infrastructure" #lightblue
+  participant "Built-in Plugin Interface" as interface
+  participant "Plugin Server" as server
+  participant LLM as llm
+end box
+
+autonumber
+== A. Redirect to Built-in Plugin Interface ==
+usr -> wb: Initiate Sketch-to-code
+activate wb
+wb -> wbAdapter: Initiate Sketch-to-code
+deactivate wb
+activate wbAdapter
+wbAdapter --> usr: Redirect to interface URL
+deactivate wbAdapter
+usr -> interface: Visit plugin interface URL
+
+== B. Sketch-to-code Interaction in Built-in Plugin Interface ==
+activate interface
+usr -> interface: Submit sketch
+interface -> server: Send sketch for processing
+loop until HTML + CSS is generated
+activate server
+server -> llm: Send sketch for processing
+activate llm
+llm --> server: Return generated Code
+deactivate llm
+server -> server: Retrieve HTML + CSS from\nLLM response via regex
+end
+server --> interface: Send back a unique UUID \n for retrieving generated HTML code
+deactivate server
+interface --> usr: Redirect to website builder with unique UUID
+deactivate interface
+
+== C. User returns to Website Builder ==
+usr -> wb: Visit website builder with UUID
+activate wb
+wb -> wbAdapter: Request generated\nHTML code for UUID
+activate wbAdapter
+wbAdapter -> server: Request generated HTML code for UUID
+activate server
+server --> wbAdapter: Return generated HTML code
+deactivate server
+wbAdapter --> wb: Set the generated\nHTML code to the\neditor
+deactivate wbAdapter
+wb --> usr: Display generated HTML code in editor
+deactivate wb
+@enduml
