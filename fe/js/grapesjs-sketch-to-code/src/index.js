@@ -36,7 +36,7 @@ export default (editor, opts = {}) => {
 		className: 'fa fa-pencil-square-o',
 		attributes: { title: 'Sketch to Code', 'data-tooltip-pos': 'bottom' },
 		command: () => {
-			location.href = options.mainUrl
+			location.href = options.mainUrl + "/full-gen.html"
 		},
 		active: false
 	})

@@ -1,8 +1,0 @@
-data/uploads/
-.env
-node_modules/
-dist/
-
-# gitignore for output test html files
-output*.html
-.log
