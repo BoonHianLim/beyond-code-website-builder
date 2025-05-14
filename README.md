@@ -47,25 +47,25 @@ This project extends on [GrapesJS](https://github.com/GrapesJS/grapesjs), an ope
     ```
 2. Install backend dependencies:
     ```bash
-    cd ../be
+    cd ./service
     python -m venv venv # create a virtual environment for Python
     source venv/bin/activate
     pip install -r requirements.txt
     ```
 3. Install frontend dependencies:
     ```bash
-    cd ../fe
+    cd ./fe
     yarn
     ```
 ### Running the Project
 1. Start the backend server:
     ```bash
-    cd ../be
+    cd ./service
     ./dev.sh
     ```
 2. Start the frontend:
     ```bash
-    cd ../fe
+    cd ./fe
     yarn start
     ```
 3. Open your browser and navigate to http://localhost:3000.
