@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Image Map</title>
+		<style>
+			.rectangle {
+				border: 3px dashed red;
+				position: absolute;
+				pointer-events: none;
+			}
+
+			#app {
+				display: flex;
+				flex-direction: row;
+
+				.menu {
+					width: 350px;
+					flex-shrink: 0;
+					background-color: #f0f0f0;
+					padding: 8px;
+
+					> div {
+						margin-bottom: 8px;
+					}
+
+					.actions {
+						a {
+							cursor: pointer;
+							text-decoration: underline;
+							color: blue;
+							margin-right: 12px;
+						}
+					}
+				}
+
+				.canvas {
+					flex-grow: 1;
+
+					.hotspot.active {
+						border: 2pt solid red;
+					}
+				}
+			}
+
+			.editor {
+				height: 155px;
+				background-color: #ddd;
+				padding: 6px;
+
+				[type='number'] {
+					width: 60px;
+				}
+				label {
+					cursor: pointer;
+				}
+				table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+
+				td {
+					border: 1px solid #888;
+
+					&.hdr {
+						width: 50px;
+						text-align: right;
+						background-color: #ccc;
+					}
+
+					padding: 3px;
+				}
+			}
+
+			.list {
+				.item {
+					padding: 6px 12px;
+					background-color: 1px solid #444;
+					border: 1pt solid #ddd;
+					color: #666;
+					&.active {
+						color: brown;
+						font-weight: bold;
+					}
+				}
+			}
+		</style>
+		<style id="hotspot-style">
+			.canvas {
+				width: 100%;
+				overflow: hidden;
+				position: relative;
+
+				img {
+					width: 100%;
+					/* visibility: hidden; */
+					pointer-events: none;
+				}
+
+				.link {
+					position: absolute;
+				}
+			}
+
+			.hotspot {
+				position: absolute;
+				pointer-events: all;
+				cursor: pointer;
+
+				&:hover {
+					border-color: purple;
+					background-color: cyan;
+					opacity: 0.25;
+				}
+			}
+		</style>
+
+		<script src="https://unpkg.com/vue@3"></script>
+	</head>
+
+	<body>
+		<div id="app">
+			<div class="menu">
+				<div class="actions">
+					<span>Model: </span>
+					<select id="model-select">
+						<option>llama3.2</option>
+						<option>gemma2:2b-instruct-fp16</option>
+						<option>deepseek-r1:8b</option>
+						<option>deepseek-r1:latest</option>
+					</select>
+					<button v-if="hotspots.length >= 1" onclick="submit_btn_onClick()">
+						<span lang="en">Next Step</span>
+					</button>
+				</div>
+
+				<div class="editor">
+					<table v-if="selectedHotspot">
+						<tr>
+							<td class="hdr">
+								<span lang="en">Type</span>
+							</td>
+							<td colspan="3">
+								<input type="text" v-model="selectedHotspot.type" placeholder="Type" />
+							</td>
+						</tr>
+						<tr>
+							<td class="hdr">
+								<span lang="en">Content</span>
+							</td>
+							<td colspan="3">
+								<input type="text" v-model="selectedHotspot.content" placeholder="Content" />
+							</td>
+						</tr>
+						<tr>
+							<td class="hdr">
+								<span lang="en">Options</span>
+							</td>
+							<td colspan="3">
+								<label><input type="checkbox" v-model="selectedHotspot.interactivity" />Interactivity</label>
+							</td>
+						</tr>
+						<tr>
+							<td class="hdr">X</td>
+							<td><input type="number" v-model="selectedHotspot.x" step="0.1" /> %</td>
+							<td class="hdr">Y</td>
+							<td><input type="number" v-model="selectedHotspot.y" step="0.1" /> %</td>
+						</tr>
+						<tr>
+							<td class="hdr">W</td>
+							<td><input type="number" v-model="selectedHotspot.width" step="0.1" /> %</td>
+							<td class="hdr">H</td>
+							<td><input type="number" v-model="selectedHotspot.height" step="0.1" /> %</td>
+						</tr>
+					</table>
+					<button v-if="selectedHotspot" @click="hotspots.splice(hotspots.indexOf(selectedHotspot), 1)">
+						<span lang="en">Delete</span>
+					</button>
+				</div>
+				<div class="list">
+					<span lang="en">Image:</span>
+					<input v-model.lazy="imgPath" type="text" placeholder="Image path" style="width: 250px" />
+					<input type="file" id="imageInput" accept="image/*" />
+					<div
+						class="item"
+						v-for="(hotspot,idx) in hotspots"
+						:class="{active: hotspot === selectedHotspot}"
+						@click="selectedHotspot = hotspot"
+					>
+						<span lang="en">Block</span>
+						{{idx}}. <span>{{hotspot.type}}</span>: <span>{{hotspot.content}}</span>
+					</div>
+				</div>
+			</div>
+			<div class="canvas">
+				<img
+					:src="imgPath"
+					style="
+						pointer-events: none;
+						-drag: none;
+						-moz-user-select: none;
+						-webkit-user-drag: none;
+						-webkit-user-select: none;
+					"
+					alt="eap"
+					referrerpolicy="no-referrer"
+				/>
+				<div
+					v-for="hotspot in hotspots"
+					class="hotspot"
+					:class="{active: hotspot === selectedHotspot}"
+					@click="selectedHotspot = hotspot"
+					:data-type="hotspot.type"
+					:style="{left: hotspot.x + '%', top: hotspot.y + '%', width: hotspot.width + '%', height: hotspot.height + '%'}"
+				></div>
+			</div>
+		</div>
+		<script>
+			class Hotspot {
+				constructor(x, y, width, height, type, content, interactivity) {
+					this.x = x
+					this.y = y
+					this.width = width
+					this.height = height
+					this.type = type ?? '#'
+					this.content = content ?? '#'
+					this.interactivity = interactivity
+				}
+			}
+			const app = Vue.createApp({
+				data() {
+					return {
+						hotspots: [],
+						selectedHotspot: null,
+						imgPath: 'https://i.imgur.com/R8yWT5b.png'
+					}
+				},
+				watch: {
+					imgPath() {
+						this.selectedHotspot = null
+
+						parse(this.imgPath).then((parsed_result) => {
+							this.hotspots = convert_to_hotspot(parsed_result)
+						})
+					}
+				},
+				methods: {}
+			})
+			const vm = app.mount('#app')
+		</script>
+		<script>
+			const canvas = document.querySelector('.canvas')
+			let startX, startY, rect
+			let currRect = null
+			canvas.addEventListener('mousedown', (e) => {
+				if (e.ctrlKey) {
+					startX = e.offsetX
+					startY = e.offsetY
+					rect = document.createElement('div')
+					rect.className = 'rectangle'
+					rect.style.left = `${startX}px`
+					rect.style.top = `${startY}px`
+					canvas.appendChild(rect)
+					currRect = rect
+				}
+			})
+			canvas.addEventListener('mouseup', (e) => {
+				if (!currRect) return
+				const width = (currRect.offsetWidth / canvas.offsetWidth) * 100
+				const height = (currRect.offsetHeight / canvas.offsetHeight) * 100
+				const left = (currRect.offsetLeft / canvas.offsetWidth) * 100
+				const top = (currRect.offsetTop / canvas.offsetHeight) * 100
+				const newHotspot = new Hotspot(left.toFixed(3), top.toFixed(3), width.toFixed(3), height.toFixed(3))
+				vm.hotspots.push(newHotspot)
+				vm.hotspots.sort((a, b) => a.y - b.y || a.x - b.x)
+				vm.selectedHotspot = vm.hotspots[vm.hotspots.indexOf(newHotspot)]
+				currRect.remove()
+				currRect = null
+			})
+			canvas.addEventListener('mousemove', (e) => {
+				if (!currRect) return
+				const width = e.offsetX - startX
+				const height = e.offsetY - startY
+				rect.style.width = `${Math.abs(width)}px`
+				rect.style.height = `${Math.abs(height)}px`
+				rect.style.left = `${Math.min(startX, e.offsetX)}px`
+				rect.style.top = `${Math.min(startY, e.offsetY)}px`
+			})
+		</script>
+		<script>
+			const imageInput = document.getElementById('imageInput')
+			imageInput.addEventListener('change', (e) => {
+				const file = e.target.files[0]
+				if (!file) return
+				if (vm.imgPath) {
+					URL.revokeObjectURL(vm.imgPath)
+				}
+				vm.imgPath = URL.createObjectURL(file)
+			})
+		</script>
+		<script>
+			const isLocal =
+				window.location.hostname === 'localhost' ||
+				window.location.hostname === '127.0.0.1' ||
+				!window.location.hostname
+
+			const API_ENDPOINT = isLocal ? 'http://localhost:8081' : 'https://api.yourproductionurl.com'
+
+			const parse = async (img_url) => {
+				const img_response = await fetch(img_url)
+				let data = await img_response.blob()
+				let metadata = {
+					type: 'image/jpeg'
+				}
+				let file = new File([data], 'test.jpg', metadata)
+
+				const formData = new FormData()
+				formData.append('file', file)
+				// Send request to backend (replace URL with your API endpoint)
+				const response = await fetch(API_ENDPOINT + '/parser/file', {
+					method: 'POST',
+					body: formData
+				})
+
+				if (response.ok) {
+					// Success: Parse the response and u pdate the UI
+					const result = await response.json()
+					return result.parsed_content_list
+				} else {
+					// Failure: Show an alert and keep the user onthe page
+					alert('Failed to generate the app. Please try again.')
+				}
+			}
+			const convert_to_hotspot = (parsed_result) => {
+				const res = []
+				parsed_result.sort((a, b) => a.bbox[1] - b.bbox[1] || a.bbox[0] - b.bbox[0])
+				parsed_result.forEach((item, idx) => {
+					const { type, bbox, content, interactivity } = item
+					const [x1, y1, x2, y2] = bbox
+					res.push(new Hotspot(x1 * 100, y1 * 100, (x2 - x1) * 100, (y2 - y1) * 100, type, content, interactivity))
+				})
+				return res
+			}
+
+			const submit_btn_onClick = () => {
+				const model = document.getElementById('model-select').value
+				const objects = vm.hotspots
+				llmProcess(model, objects).then((response) => {
+					if (response.ok) {
+						// Success: Redirect to edit.html
+						response.json().then((res) => {
+							localStorage.setItem('generated_response', res)
+							window.location.href = 'edit.html'
+						})
+					} else {
+						// Failure: Show an alert and keep the user on the page
+						alert('Failed to generate the app. Please try again.')
+					}
+				})
+			}
+			const llmProcess = async (model, objects) => {
+				return await fetch(API_ENDPOINT + '/generator/struct', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						model: model,
+						objects: objects
+					})
+				})
+			}
+		</script>
+	</body>
+</html>

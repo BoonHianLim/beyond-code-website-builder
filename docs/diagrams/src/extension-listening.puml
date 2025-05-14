@@ -1,0 +1,40 @@
+@startuml Extension Detection
+
+title Extension Detection Workflow
+skinparam Padding 0
+skinparam BoxPadding 0
+
+actor User as usr
+participant "Plugin Server" as server
+
+autonumber
+server -> server: Startup
+activate server
+server -> server: Check for installed extensions\nin default extension directory
+server -> server: Save installed extensions to\nin-memory registry
+server -> server: Monitor changes in the default\nextension directory
+server -> server: Finish startup
+deactivate server
+
+note over server
+    The server is now ready to accept 
+    requests from the website builder.
+end note
+
+== A. Load extensions during Cron Job == 
+note over server
+    The server periodically checks
+    for changes in the default extension directory.
+    (e.g., every 5 minutes)
+end note
+server -> server: Check for installed extensions\nin default extension directory
+opt New extensions found and\nnot loaded yet
+    server -> server: Save new extensions to\nin-memory registry
+end
+== B. Monitor changes with Watchdog == 
+... After some time ...
+usr -> server: Put new extension in default extension directory
+server -> server: Detect changes in the default\nextension directory
+opt New extensions found and\nnot loaded yet
+    server -> server: Save new extensions to\nin-memory registry
+end

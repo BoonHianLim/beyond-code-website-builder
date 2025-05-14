@@ -7,6 +7,10 @@
     "http-server": "^14.1.1"
   },
   "scripts": {
-    "dev": "http-server ./ -p 3000 -c-1 -a localhost"
+    "build-sketch": "cd js/grapesjs-sketch-to-code && yarn build",
+    "build-drag": "cd js/grapesjs-drag-mode-toggle && yarn build",
+    "build": "npm-run-all --parallel build-sketch build-drag",
+    "dev": "http-server ./ -p 3000 -c-1 -a localhost",
+    "start": "npm-run-all build dev"
   }
 }

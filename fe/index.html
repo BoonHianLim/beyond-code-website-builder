@@ -1,158 +1,100 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>AI App Generator</title>
-		<link rel="stylesheet" href="styles.css" />
+		<meta charset="utf-8" />
+		<title>GrapesJS Demo - Free Open Source Website Page Builder</title>
+		<meta content="Best Free Open Source Responsive Websites Builder" name="description" />
+		<link rel="stylesheet" href="stylesheets/toastr.min.css" />
+		<link rel="stylesheet" href="stylesheets/grapes.min.css?v0.21.10" />
+		<link rel="stylesheet" href="stylesheets/grapesjs-preset-webpage.min.css" />
+		<link rel="stylesheet" href="stylesheets/tooltip.css" />
+		<link rel="stylesheet" href="stylesheets/demos.css?v3" />
+		<link href="https://unpkg.com/grapick/dist/grapick.min.css" rel="stylesheet" />
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="js/toastr.min.js"></script>
+		<script src="js/grapes.min.js?v0.22.6"></script>
+		<script src="https://unpkg.com/grapesjs-preset-webpage@1.0.2"></script>
+		<script src="https://unpkg.com/grapesjs-blocks-basic@1.0.1"></script>
+		<script src="https://unpkg.com/grapesjs-plugin-forms@2.0.5"></script>
+		<script src="https://unpkg.com/grapesjs-component-countdown@1.0.1"></script>
+		<script src="https://unpkg.com/grapesjs-plugin-export@1.0.11"></script>
+		<script src="https://unpkg.com/grapesjs-tabs@1.0.6"></script>
+		<script src="https://unpkg.com/grapesjs-custom-code@1.0.1"></script>
+		<script src="https://unpkg.com/grapesjs-touch@0.1.1"></script>
+		<script src="https://unpkg.com/grapesjs-parser-postcss@1.0.1"></script>
+		<script src="https://unpkg.com/grapesjs-tooltip@0.1.7"></script>
+		<script src="https://unpkg.com/grapesjs-tui-image-editor@0.1.3"></script>
+		<script src="https://unpkg.com/grapesjs-typed@1.0.5"></script>
+		<script src="https://unpkg.com/grapesjs-style-bg@2.0.1"></script>
+		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 	</head>
 	<body>
-		<div class="container">
-			<div class="content-area">
-				<div class="upload-box">
-					<div class="upload-instructions">
-						<div class="upload-icon">
-							<img
-								src="data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjY2NjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cGF0aCBkPSJNMTguNTMgMTQuMTUgNDEgMTQuMTVjMS44IDAgMy4yNiAxLjQ2IDMuMjYgMy4yNnMtMS40NiAzLjI2LTMuMjYgMy4yNkgzNS4xNHYxLjE5YzAgMy42MS0yLjkyIDYuNTMtNi41MyA2LjUzcy02LjUzLTIuOTItNi41My02LjUzdjAtLjMxQzI1LjgzIDE5LjUgMjIuMTYgMTYgMTguNSAxNnMtNy4zNCAzLjUgOS4zMyAzLjVoNC44NGwtNC44NC00Ljg0IDQuODQtNC44NEgxOC41M2M0LjU4IDAgOC4zMyAzLjY3IDguMzMgOC4yNXMtMy42NSA4LjI1LTguMzMgOC4yNWMtNC42NyAwLTguMzMtMy42Ny04LjMzLTguMjV2LTEuMUMxMCAxMS4yOCAxMy4yNyA4IDE4LjUgOCBjNC43MSAwIDguNTggMy42OSAxMC4yOSA4LjQyLjMtLjAzLjYxLS4wNC45My0uMDRtMCAwIi8+PC9zdmc+"
-								alt="icon"
-							/>
-						</div>
-						<div class="upload-text">
-							<p>Upload a screenshot<br /><span>or drag and drop</span></p>
-						</div>
+		<div style="display: none">
+			<div class="gjs-logo-cont">
+				<a href="https://grapesjs.com"><img class="gjs-logo" src="img/grapesjs-logo-cl.png" /></a>
+				<div class="gjs-logo-version"></div>
+			</div>
+		</div>
+		<div class="app-wrap">
+			<div class="pages-wrp">
+				<div class="add-page" @click="addPage">Add new page</div>
+				<div class="pages">
+					<div
+						v-for="page in pages"
+						:key="page.id"
+						:class="{page: 1, selected: isSelected(page) }"
+						@click="selectPage(page.id)"
+					>
+						{{ page.get('name') || page.id }}
+						<span v-if="!isSelected(page)" @click="removePage(page.id)" class="page-close">&Cross;</span>
 					</div>
-					<div class="preview-container" style="display: none">
-						<img class="preview-img" alt="Preview" />
-					</div>
-					<input type="file" class="file-input" id="fileInput" accept="image/*" />
 				</div>
-				<div class="controls">
-					<div class="model-select">
-						<label for="aiModel">AI Model:</label>
-						<select id="aiModel">
-							<option>Ollama311B</option>
-							<option>AzureGPT4</option>
-						</select>
-					</div>
-					<button class="generate-btn" id="generateBtn">Generate app</button>
-				</div>
+			</div>
+			<div class="editor-wrap">
+				<div id="gjs" style="height: 0px; overflow: hidden"></div>
+			</div>
+		</div>
+		<div id="info-panel" style="display: none">
+			<br />
+			<svg class="info-panel-logo" xmlns="https://www.w3.org/2000/svg" version="1">
+				<g id="gjs-logo">
+					<path
+						d="M40 5l-12.9 7.4 -12.9 7.4c-1.4 0.8-2.7 2.3-3.7 3.9 -0.9 1.6-1.5 3.5-1.5 5.1v14.9 14.9c0 1.7 0.6 3.5 1.5 5.1 0.9 1.6 2.2 3.1 3.7 3.9l12.9 7.4 12.9 7.4c1.4 0.8 3.3 1.2 5.2 1.2 1.9 0 3.8-0.4 5.2-1.2l12.9-7.4 12.9-7.4c1.4-0.8 2.7-2.2 3.7-3.9 0.9-1.6 1.5-3.5 1.5-5.1v-14.9 -12.7c0-4.6-3.8-6-6.8-4.2l-28 16.2"
+						style="
+							fill: none;
+							stroke-linecap: round;
+							stroke-linejoin: round;
+							stroke-miterlimit: 10;
+							stroke-width: 10;
+							stroke: #fff;
+						"
+					/>
+				</g>
+			</svg>
+			<br />
+			<div class="info-panel-label">
+				<b>GrapesJS Webpage Builder</b> is a simple showcase of what is possible to achieve with the
+				<a class="info-panel-link gjs-four-color" target="_blank" href="https://github.com/artf/grapesjs">GrapesJS</a>
+				core library
+				<br /><br />
+				For any hint about the demo check the
+				<a class="info-panel-link gjs-four-color" target="_blank" href="https://github.com/artf/grapesjs-preset-webpage"
+					>Webpage Preset repository</a
+				>
+				and open an issue. For problems with the builder itself, open an issue on the main
+				<a class="info-panel-link gjs-four-color" target="_blank" href="https://github.com/artf/grapesjs"
+					>GrapesJS repository</a
+				>
+				<br /><br />
+				Being a free and open source project contributors and supporters are extremely welcome. If you like the project
+				support it with a donation of your choice or become a backer/sponsor via
+				<a class="info-panel-link gjs-four-color" target="_blank" href="https://opencollective.com/grapesjs"
+					>Open Collective</a
+				>
 			</div>
 		</div>
 
-		<!-- Loading Overlay -->
-		<div class="loading-overlay" id="loadingOverlay" style="display: none">
-			<div class="spinner"></div>
-		</div>
-
-		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const fileInput = document.getElementById('fileInput')
-				const uploadBox = document.querySelector('.upload-box')
-				const uploadInstructions = document.querySelector('.upload-instructions')
-				const previewContainer = document.querySelector('.preview-container')
-				const previewImg = document.querySelector('.preview-img')
-
-				let selectedFile = null
-
-				// Optional: Add drag & drop functionality
-				uploadBox.addEventListener('dragover', (e) => {
-					e.preventDefault()
-					uploadBox.style.borderColor = '#888'
-				})
-
-				uploadBox.addEventListener('dragleave', () => {
-					uploadBox.style.borderColor = '#ccc'
-				})
-
-				uploadBox.addEventListener('drop', (e) => {
-					e.preventDefault()
-					uploadBox.style.borderColor = '#ccc'
-					const files = e.dataTransfer.files
-					if (files.length > 0) {
-						handleFile(files[0])
-					}
-				})
-
-				// File input change
-				fileInput.addEventListener('change', () => {
-					if (fileInput.files.length > 0) {
-						handleFile(fileInput.files[0])
-					}
-				})
-
-				function handleFile(file) {
-					// Check file type: must be an image
-					if (!file.type.startsWith('image/')) {
-						alert('Please upload an image file (png, jpg, etc.)')
-						return
-					}
-
-					// Set the selected file
-					selectedFile = file
-
-					// Preview the image
-					const reader = new FileReader()
-					reader.onload = function (e) {
-						previewImg.src = e.target.result
-						// Hide instructions and show preview
-						uploadInstructions.style.display = 'none'
-						previewContainer.style.display = 'flex'
-					}
-					reader.readAsDataURL(file)
-				}
-
-				const generateBtn = document.getElementById('generateBtn')
-				const loadingOverlay = document.getElementById('loadingOverlay')
-				const contentArea = document.querySelector('.content-area')
-
-				generateBtn.addEventListener('click', async () => {
-					if (!selectedFile) {
-						alert('Please upload a file first.')
-						return
-					}
-
-					// Show loading overlay and blur the content
-					loadingOverlay.style.display = 'flex'
-					contentArea.classList.add('blur')
-
-					try {
-						const isLocal =
-							window.location.hostname === 'localhost' ||
-							window.location.hostname === '127.0.0.1' ||
-							!window.location.hostname
-
-						const API_ENDPOINT = isLocal ? 'http://localhost:8080' : 'https://api.yourproductionurl.com'
-
-						// Create FormData to handle file upload
-						const formData = new FormData()
-						formData.append('file', selectedFile)
-						formData.append('type', document.getElementById('aiModel').value)
-
-						// Send request to backend (replace URL with your API endpoint)
-						const response = await fetch(API_ENDPOINT + '/generate-website', {
-							method: 'POST',
-							body: formData
-						})
-
-						if (response.ok) {
-							// Success: Redirect to edit.html
-							localStorage.setItem('generated_response', await response.json())
-
-							window.location.href = 'edit.html'
-						} else {
-							// Failure: Show an alert and keep the user on the page
-							alert('Failed to generate the app. Please try again.')
-						}
-					} catch (error) {
-						console.error('Error:', error)
-						alert('Something went wrong. Please check your connection.')
-					} finally {
-						// Hide loading overlay and remove blur
-						loadingOverlay.style.display = 'none'
-						contentArea.classList.remove('blur')
-					}
-				})
-			})
-		</script>
+		<script type="module" src="js/edit.js"></script>
 	</body>
 </html>

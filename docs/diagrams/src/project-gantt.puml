@@ -1,0 +1,23 @@
+@startgantt Project Gantt Chart
+Print between 2024-07-01 and 2025-05-01
+projectscale monthly zoom 2.5
+Project starts the 1st of July 2024
+-- Part 1: Exploration Stage --
+[FOGG case study] starts 2024-07-01
+[FOGG case study] ends 2025-03-31
+
+[Additional Lit Review] starts 2024-08-01
+[Additional Lit Review] ends 2024-11-01
+
+[Project\nProposal] starts 2024-11-01
+[Project\nProposal] ends 2024-12-01
+-- Part 2: Implementation & Experiments Stage --
+[Prototype Development & Experiments] starts 2024-12-01
+[Prototype Development & Experiments] ends 2025-04-01
+
+[Compilation\nof Results] starts 2025-03-01
+[Compilation\nof Results] ends 2025-04-01
+
+[Oral\nPresentation\nPreparation] starts 2025-04-01
+[Oral\nPresentation\nPreparation] ends 2025-05-01
+@endgantt

@@ -1,3 +1,5 @@
+import sketchToCodePlugin from './grapesjs-sketch-to-code/dist/index.js'
+import dragModePlugin from './grapesjs-drag-mode-toggle/dist/index.js'
 var lp = './img/'
 var plp = 'https://via.placeholder.com/350x250/'
 var images = [
@@ -19,6 +21,7 @@ var images = [
 var editor = grapesjs.init({
 	height: '100%',
 	container: '#gjs',
+	dragMode: '',
 	fromElement: true,
 	showOffsets: true,
 	assetManager: {
@@ -309,6 +312,14 @@ var editor = grapesjs.init({
 	storageManager: {
 		autoload: false
 	},
+	pageManager: {
+		pages: [
+			{
+				id: 'page-1',
+				name: 'Page 1'
+			}
+		]
+	},
 	plugins: [
 		'gjs-blocks-basic',
 		'grapesjs-plugin-forms',
@@ -322,7 +333,9 @@ var editor = grapesjs.init({
 		'grapesjs-tui-image-editor',
 		'grapesjs-typed',
 		'grapesjs-style-bg',
-		'grapesjs-preset-webpage'
+		'grapesjs-preset-webpage',
+		sketchToCodePlugin,
+		dragModePlugin
 	],
 	pluginsOpts: {
 		'gjs-blocks-basic': { flexGrid: true },
@@ -457,7 +470,7 @@ pn.addButton('options', {
 		'data-tooltip-pos': 'bottom'
 	}
 })
-
+console.log('added info button')
 // Simple warn notifier
 var origWarn = console.warn
 toastr.options = {
@@ -633,3 +646,5 @@ editor.on('load', function () {
 
 ga('create', 'UA-74284223-1', 'auto')
 ga('send', 'pageview')
+
+
