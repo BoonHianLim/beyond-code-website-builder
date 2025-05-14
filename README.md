@@ -90,9 +90,9 @@ https://github.com/user-attachments/assets/9afdf52c-21e9-4376-9a19-f16fe1c1023d
 https://github.com/user-attachments/assets/66d9b33c-6050-4671-a5a8-adbc68f106c8
 
 ### Technologies Used
-Frontend: HTML, CSS, JavaScript, GrapesJS
-Backend: Python, FastAPI
-AI Models: Gemini
+* Frontend: HTML, CSS, JavaScript, GrapesJS
+* Backend: Python, FastAPI
+* AI Models: Gemini
 
 ## License
 The GrapesJS files (grapesjs.min.js, grapesjs.min.js.app, the stylesheets and image under fe directory) are licensed under [GRAPESJS-LICENSE](docs/license//GRAPESJS-LICENSE).
