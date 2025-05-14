@@ -9,4 +9,4 @@ Instructions:
 5. Visit localhost:8080 for backend (in Express)
 
 Acknowledgement:
-* The SVG used for the Partial Sketch-to-Code can be found here: https://www.svgrepo.com/svg/520888/pencil-edit. Thanks Ankush Syal!
+* The SVG used as a logo for the Partial Sketch-to-Code component in the panel can be found here: https://www.svgrepo.com/svg/520888/pencil-edit. Thanks Ankush Syal!

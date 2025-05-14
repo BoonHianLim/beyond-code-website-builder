@@ -8,7 +8,12 @@ export default (editor, opts = {}) => {
 		id: 'partial-sketch-block',
 		label: 'Partial Sketch Block',
 		media: svgImage,
-		content: { type: 'image' },
+		content: {
+			type: 'image',
+			attributes: {
+				tag: 'partial-sketch-block'
+			}
+		},
 		activate: true,
 		category: 'Experimental'
 	})

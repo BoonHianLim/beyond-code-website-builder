@@ -312,6 +312,14 @@ var editor = grapesjs.init({
 	storageManager: {
 		autoload: false
 	},
+	pageManager: {
+		pages: [
+			{
+				id: 'page-1',
+				name: 'Page 1'
+			}
+		]
+	},
 	plugins: [
 		'gjs-blocks-basic',
 		'grapesjs-plugin-forms',
@@ -638,3 +646,5 @@ editor.on('load', function () {
 
 ga('create', 'UA-74284223-1', 'auto')
 ga('send', 'pageview')
+
+

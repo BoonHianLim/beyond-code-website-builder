@@ -1,6 +1,6 @@
 {
   "name": "grapesjs-sketch-to-code",
-  "version": "1.0.49",
+  "version": "1.0.84",
   "description": "Grapesjs Sketch To Code",
   "main": "dist/index.js",
   "repository": {

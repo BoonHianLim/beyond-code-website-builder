@@ -1,0 +1,82 @@
+@startuml Sketch-to-code
+
+title Partial Sketch-to-Code Workflow via Plugin-of-Plugin Integration
+skinparam Padding 0
+skinparam BoxPadding 0
+
+
+hide footbox
+box "Website Builder Side" #lightgray
+    actor User as usr
+    participant "Website Builder" as wb
+end box
+box "Adapter Layer (Shared Component)" #EEEEEE
+    participant "Website Builder Adapter" as wbAdapter
+    note over wbAdapter
+        Acts as a bridge to the Website Builder / Plugin Server
+    end note
+end box
+box "Plugin Infrastructure" #lightblue
+  participant "Built-in Plugin Interface" as interface
+  participant "Plugin Server" as server
+  participant "Plugin-of-Plugin\n(Plugin Extension)" as extension
+end box
+
+autonumber
+== A. Redirect to Built-in Plugin Interface ==
+usr -> wb: Initiate Sketch-to-code
+activate wb
+wb -> wbAdapter: Initiate Sketch-to-code
+deactivate wb
+activate wbAdapter
+wbAdapter --> usr: Redirect to interface URL
+deactivate wbAdapter
+usr -> interface: Visit plugin interface URL
+activate interface
+interface -> server: Request plugin-of-plugin\n(plugin extension) list
+activate server
+server -> extension: Get UI of all plugin-of-plugins\nthrough get_UI() hook
+activate extension
+extension --> server: Return UI
+deactivate extension
+server --> interface: Return all UIs
+deactivate server
+
+interface --> usr: Display UI according to the extension selected
+
+== B. Sketch-to-code Interaction in Built-in Plugin Interface ==
+
+usr -> interface: Submit sketch
+interface -> server: Send sketch for processing
+activate server
+server -> extension: Trigger generate_code()\nhook according 
+activate extension
+extension -> extension: Do custom\ngeneration
+note over extension
+    This can be a call to an LLM or 
+    any other generation process.
+
+    The extension can handle regeneration 
+    however it wants here as well.
+end note
+extension --> server: Return generated HTML code
+deactivate extension
+server --> interface: Send back a unique UUID \n for retrieving generated HTML code
+deactivate server
+interface --> usr: Redirect to website builder with unique UUID
+deactivate interface
+
+== C. User returns to Website Builder ==
+usr -> wb: Visit website builder with UUID
+activate wb
+wb -> wbAdapter: Request generated\nHTML code for UUID
+activate wbAdapter
+wbAdapter -> server: Request generated HTML code for UUID
+activate server
+server --> wbAdapter: Return generated HTML code
+deactivate server
+wbAdapter --> wb: Set the generated\nHTML code to the\neditor
+deactivate wbAdapter
+wb --> usr: Display generated HTML code in editor
+deactivate wb
+@enduml

@@ -1,0 +1,14 @@
+@startuml Extension Detection
+
+title Extension Detection Workflow - (2) Watchdog
+skinparam Padding 0
+skinparam BoxPadding 0
+
+actor User as usr
+participant "Plugin Server" as server
+
+server -> server: Initiate monitor changes \nin the default extension directory
+
+autonumber
+
+
