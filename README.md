@@ -72,18 +72,22 @@ This project extends on [GrapesJS](https://github.com/GrapesJS/grapesjs), an ope
 
 ### Usage
 1. Full frontend UI Generation 
-    <br><video src='static/videos/full-generation.mp4' width=500>
+
+https://github.com/user-attachments/assets/cf34c212-efee-4e42-9f90-bed627bdb7ba
 
 2. Partial frontend UI Generation
-    <br><video src='static/videos/partial-generation.mp4' width=500>
+
+https://github.com/user-attachments/assets/3ca65375-9732-47b1-964c-8c32e7926723
 
 3. Plugins-of-plugins System: Import new extension
-    <br><video src='static/videos/plugins-of-plugins.mp4' width=500>
+
+https://github.com/user-attachments/assets/cc4258f0-43e3-4120-872b-756c8de89934
 
 4. HTML Import / Export (Native feature of GrapesJS)
-    <br><video src='static/videos/html-import.mp4' width=500>
 
-    <br><video src='static/videos/html-export.mp4' width=500>
+https://github.com/user-attachments/assets/9afdf52c-21e9-4376-9a19-f16fe1c1023d
+
+https://github.com/user-attachments/assets/66d9b33c-6050-4671-a5a8-adbc68f106c8
 
 ### Technologies Used
 Frontend: HTML, CSS, JavaScript, GrapesJS
