@@ -3,7 +3,8 @@
 Quick Links:
 [[Project Page]](https://boonhianlim.github.io/beyond-code)
 [[Abstract]](https://openreview.net/forum?id=JRjTtoJman)
-[[Paper]](https://hdl.handle.net/10356/184126)
+[[Paper]](https://github.com/BoonHianLim/beyond-code/blob/577476251edb436ed049e8eb161e6e2346c76da7/beyond-code.pdf)
+[[Dr NTU]](https://hdl.handle.net/10356/184126)
 [[Experiment]](https://github.com/BoonHianLim/partial-UI-generation)
 
 This project extends on [GrapesJS](https://github.com/GrapesJS/grapesjs), an open-source website builder, and additionally implements features that helps tackle the lack of extendsibility and documentation issues in website builders. 
